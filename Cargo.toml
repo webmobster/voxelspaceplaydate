@@ -1,0 +1,38 @@
+[package]
+name = "voxelspaceplaydate"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[package.metadata.cargo-xbuild]
+memcpy = false
+sysroot_path = "target/sysroot"
+panic_immediate_abort = false
+
+[profile.dev]
+panic = "abort"
+opt-level = 'z'
+lto = true
+
+[profile.release]
+panic = "abort"
+opt-level = 'z'
+lto = true
+
+[lib]
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+crankstart = { path = "./crankstart" }
+crankstart-sys = { path = "./crankstart/crankstart-sys" }
+anyhow = { version = "1.0.31", default-features = false }
+euclid = { version = "0.22.7", default-features = false, features = [ "libm" ] }
+hashbrown = "0.13.2"
+heapless = "0.7.16"
+
+[dependencies.cstr_core]
+version = "=0.2.6"
+default-features = false
+features = [ "alloc" ]

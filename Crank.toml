@@ -1,0 +1,9 @@
+[[target]]
+name = "voxelspaceplaydate"
+assets = [
+    "processedmaps/C1W.pgm",
+    "processedmaps/D1.pgm",
+    "processedmaps/D2.pgm",
+    "util_asset/Ordered_4x4_Bayer_matrix_dithering.pgm",
+
+]
