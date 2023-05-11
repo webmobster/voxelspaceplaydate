@@ -7,3 +7,10 @@ assets = [
     "util_asset/Ordered_4x4_Bayer_matrix_dithering.pgm",
 
 ]
+[target.metadata]
+name = "Voxel Space Playdate"
+author="Ed Clarke"
+description="A prototype game using the voxelspace algorithm on the playdate console"
+bundle_id="edclarke.voxelspaceplaydate"
+version="0.1"
+buildNumber=10

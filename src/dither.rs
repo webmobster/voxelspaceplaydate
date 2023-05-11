@@ -1,71 +1,54 @@
-use alloc::vec;
-use alloc::vec::Vec;
-use crankstart::graphics::Graphics;
-use crankstart::log_to_console;
-use crankstart_sys::{LCD_ROWSIZE, LCD_ROWS};
-
+/*
 const DITHER_MATRIX: [u8; 16] = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const DITHER_MATRIX_256: [u8; 16] = [
     0, 127, 31, 159, 191, 63, 223, 95, 47, 175, 15, 143, 239, 111, 207, 79,
 ];
+*/
 
-const DITHER_MATRIX_256_2: [u8; 16] = [
+pub const DITHER_MATRIX_256_2: [u8; 16] = [
     0, 128, 32, 159, 191, 64, 223, 96, 48, 175, 16, 143, 239, 112, 207, 80,
 ];
 
-//todo merge with rendering
-pub fn simple_ordered_dither_draw(grayscale: &[u8], x_len: usize, y_len: usize, input_x_len: usize, input_y_len: usize) {
-    let graphics: Graphics = Graphics::get();
-    let frame: &mut [u8] = graphics.get_frame().expect("expect to get the frame");
-    let x_ratio = x_len/input_x_len;
-    let y_ratio = y_len/input_y_len;
+//http://graphics.stanford.edu/~seander/bithacks.html
+const MASKS: [usize; 4] = [0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF];
+const SHIFTS: [usize; 4] = [1, 2, 4, 8];
 
-    for y in 0..y_len {
-        let mut bitpos = 0x80;
-        let mut b = 0;
-        for x in 0..x_len {
-            let offset = ((y / y_ratio) * input_x_len) + x / x_ratio;
-            let i = x % 4;
-            let j = y % 4;
-            let dither_offset = (j * 4) + i;
+//Also tested H-curve (not hilbert yet) and was slower
+pub fn calc_z_order(x_pos: usize, y_pos: usize) -> usize {
+    let mut x = x_pos; // Interleave lower 16 bits of x and y, so the bits of x
+    let mut y = y_pos; // are in the even positions and bits from y in the odd;
 
-            let dither_threshold = DITHER_MATRIX_256_2[dither_offset];
+    x = (x | (x << SHIFTS[3])) & MASKS[3];
+    x = (x | (x << SHIFTS[2])) & MASKS[2];
+    x = (x | (x << SHIFTS[1])) & MASKS[1];
+    x = (x | (x << SHIFTS[0])) & MASKS[0];
 
-            let offset_buff: usize = ((y * LCD_ROWSIZE as usize * 8) + x) as usize;
+    y = (y | (y << SHIFTS[3])) & MASKS[3];
+    y = (y | (y << SHIFTS[2])) & MASKS[2];
+    y = (y | (y << SHIFTS[1])) & MASKS[1];
+    y = (y | (y << SHIFTS[0])) & MASKS[0];
 
-            if grayscale[offset] > dither_threshold {
-                b = b | bitpos
-            }
-            bitpos >>= 1;
-
-            if bitpos == 0 {
-                frame[offset_buff / 8] = b;
-                b = 0;
-                bitpos = 0x80;
-            }
-        }
-    }
-    graphics
-        .mark_updated_rows(0..=(LCD_ROWS as i32) - 1)
-        .expect("marked rows");
-
+    
+    x | (y << 1)
 }
 
-/// Helper to extend images used in testing
-pub fn extend_image(
-    input: &[u8],
-    x_len: usize,
-    y_len: usize,
-    output: &mut [u8],
-    out_x_len: usize,
-    out_y_len: usize,
-) {
-    for x in 0..x_len {
-        for y in 0..y_len {
-            let offset_input = (y * x_len) + x;
-            let offset_output = (y * out_x_len) + x;
+pub mod tests {
+    use alloc::vec;
+    use alloc::vec::Vec;
 
-            output[offset_output] = input[offset_input];
+    use super::calc_z_order;
+
+    pub fn test_z_curve() {
+        let mut buf: Vec<i32> = vec![-1; 1024 * 1024];
+        for x in 0..1024 {
+            for y in 0..1024 {
+                buf[calc_z_order(x, y)] = (y * 1024 + x) as i32;
+            }
+        }
+        for x in 0..1024 {
+            for y in 0..1024 {
+                assert_eq!(buf[calc_z_order(x, y)], (y * 1024 + x) as i32);
+            }
         }
     }
 }

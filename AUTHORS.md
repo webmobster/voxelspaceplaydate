@@ -1,0 +1,2 @@
+Code based on https://github.com/s-macke/VoxelSpace by Sebastian Macke.
+Further ideas taken from commentaters  https://news.ycombinator.com/item?id=26631995 and https://archive.scene.org/mirrors/hornet/code/effects/land/ign_land.zip (https://news.ycombinator.com/user?id=Jare)
